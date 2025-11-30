@@ -68,7 +68,9 @@ diabetes_df |>
 The first thing I checked was the distribution of the response variable. Most people in the dataset do not have diabetes, with a small portion having prediabetes, and an even smaller group with diagnosed diabetes. This large imbalance is important because it could potentially affect model performance because models could learn to predict "no diabetes" every time.
 
 ```{r}
-summary(select(diabetes_df, BMI, PhysHlth, MentHlth))
+diabetes_df |>
+  select(BMI, PhysHlth, MentHlth) |>
+  summary()
 ```
 
 BMI has a much higher mean and right-skew than mental health or physical health, which fits the known patterns of this sample.
@@ -130,4 +132,4 @@ diabetes_df |>
 This plot demonstrates that people who rate their general health as “fair” or “poor” have much higher rates of diabetes compared to those who say their health is “excellent” or “very good.” This makes sense and tells me general health might capture a lot of underlying conditions tied to diabetes.
 
 # Modeling Link
-[Click here for the Modeling Page](Modeling.qmd)
+[Click here for the Modeling Page](Modeling.html)
