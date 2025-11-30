@@ -1,0 +1,19 @@
+---
+title: "EDA.qmd"
+format: html
+editor: visual
+---
+
+# Introduction
+
+The data used in this project comes from the CDC's 2015 Behavioral Risk Factor Surveillance System. The survey was conducted to collect uniform data on preventative health practices and risk behaviors that are linked to chronic diseases in adults. The diabetes health indicators dataset is a consolidated version of the entire 2015 survey, containing over 250,000 responses and variables related to diabetes, health status, and lifestyle.
+
+The primary variable of interest for this project is Diabetes_012, which classifies respondents into three groups: 0 = no diabetes, 1 = prediabetes, 2 = diagnosed diabetes. Because this survey includes many health indicators that may relate to diabetes risk, this dataset is well-suited for exploring how variables can help predict diabetes status. 
+
+In this exploratory data analysis, I focus on variables that are known to be related to diabetes, such as BMI, age, general health rating, high blood pressure, high cholesterol, and physical activity. The goal of the EDA is to understand the structure of the data, check for missingness, summarize the distribution of the variables, and visualize how they relate to diabetes status. 
+
+# Data Import and Cleaning
+
+# Summaries and Plots
+
+# Modeling Link
