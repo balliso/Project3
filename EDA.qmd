@@ -1,5 +1,5 @@
 ---
-title: "EDA.qmd"
+title: "EDA: Diabetes Health Indicators"
 format: html
 editor: visual
 ---
@@ -8,12 +8,48 @@ editor: visual
 
 The data used in this project comes from the CDC's 2015 Behavioral Risk Factor Surveillance System. The survey was conducted to collect uniform data on preventative health practices and risk behaviors that are linked to chronic diseases in adults. The diabetes health indicators dataset is a consolidated version of the entire 2015 survey, containing over 250,000 responses and variables related to diabetes, health status, and lifestyle.
 
-The primary variable of interest for this project is Diabetes_012, which classifies respondents into three groups: 0 = no diabetes, 1 = prediabetes, 2 = diagnosed diabetes. Because this survey includes many health indicators that may relate to diabetes risk, this dataset is well-suited for exploring how variables can help predict diabetes status. 
+The primary variable of interest for this project is Diabetes_012, which classifies respondents into three groups: 0 = no diabetes, 1 = prediabetes, 2 = diagnosed diabetes. Because this survey includes many health indicators that may relate to diabetes risk, this dataset is well-suited for exploring how variables can help predict diabetes status.
 
-In this exploratory data analysis, I focus on variables that are known to be related to diabetes, such as BMI, age, general health rating, high blood pressure, high cholesterol, and physical activity. The goal of the EDA is to understand the structure of the data, check for missingness, summarize the distribution of the variables, and visualize how they relate to diabetes status. 
+In this exploratory data analysis, I focus on variables that are known to be related to diabetes, such as BMI, age, general health rating, high blood pressure, high cholesterol, and physical activity. The goal of the EDA is to understand the structure of the data, check for missingness, summarize the distribution of the variables, and visualize how they relate to diabetes status. The insights will help guide my modeling decisions in the next part of this project.
 
 # Data Import and Cleaning
 
+```{r}
+library(tidyverse)
+
+# Import data
+diabetes_df <- read_csv("diabetes_012_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
+
+# Convert categorical variables into factors
+diabetes_df <- diabetes_df |>
+  mutate(
+    Diabetes_012 = factor(Diabetes_012, levels = c(0,1,2), labels = c("No Diabetes", "Prediabetes", "Diabetes")),
+    HighBP = factor(HighBP, labels = c("No High BP", "High BP")),
+    HighChol = factor(HighChol, labels = c("No High Chol", "High Chol")),
+    CholCheck = factor(CholCheck, labels = c("No Check", "Checked")),
+    Smoker = factor(Smoker, labels = c("Non-Smoker", "Smoker")),
+    Stroke = factor(Stroke, labels = c("No Stroke", "Stroke")),
+    HeartDiseaseorAttack = factor(HeartDiseaseorAttack, labels = c("No HD/Attack", "HD/Attack")),
+    PhysActivity = factor(PhysActivity, levels = c(0, 1), labels = c("No Activity", "Activity")),
+    Fruits = factor(Fruits, levels = c(0, 1), labels = c("No", "Yes")),
+    Veggies = factor(Veggies, levels = c(0, 1), labels = c("No", "Yes")),
+    HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0, 1), labels = c("No", "Yes")),
+    AnyHealthcare = factor(AnyHealthcare, levels = c(0, 1), labels = c("No", "Yes")),
+    NoDocbcCost = factor(NoDocbcCost, levels = c(0, 1), labels = c("No", "Yes")),
+    GenHlth = factor(GenHlth, labels = c("Excellent","Very good","Good","Fair","Poor")),
+    DiffWalk = factor(DiffWalk, levels = c(0, 1), labels = c("No Difficulty", "Difficulty Walking")),
+    Sex = factor(Sex, labels = c("Female", "Male")),
+    Age = factor(Age, levels = 1:13, labels = c("18–24", "25–29", "30–34", "35–39", "40–44", "45–49", "50–54", "55–59", "60–64", "65–69", "70–74", "75–79", "80+")),
+    Education = factor(Education, levels = 1:6, labels = c("Kindergarten or less", "Grades 1–8", "Grades 9–11", "High school or GED", "Some college/technical school", "College graduate")),
+    Income = factor(Income, levels = 1:8, labels = c("<$10,000", "$10,000–<$15,000", "$15,000–<$20,000", "$20,000–<$25,000", "$25,000–<$35,000", "$35,000–<$50,000", "$50,000–<$75,000", "$75,000+"))
+    )
+head(diabetes_df)
+
+# Check for NA. No missing values were found.
+colSums(is.na(diabetes_df))
+```
+
 # Summaries and Plots
+
 
 # Modeling Link
