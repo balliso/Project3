@@ -4,4 +4,185 @@ format: html
 editor: visual
 ---
 
-idk yet
+# Introduction
+
+
+# Split the Data
+```{r}
+library(tidyverse)
+library(tidymodels)
+
+# Read in data
+diabetes_df <- read_csv("diabetes_012_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
+
+# Convert categorical variables into factors
+diabetes_df <- diabetes_df |>
+  mutate(
+    Diabetes_012 = factor(Diabetes_012, levels = c(0,1,2), labels = c("No Diabetes", "Prediabetes", "Diabetes")),
+    HighBP = factor(HighBP, labels = c("No High BP", "High BP")),
+    HighChol = factor(HighChol, labels = c("No High Chol", "High Chol")),
+    CholCheck = factor(CholCheck, labels = c("No Check", "Checked")),
+    Smoker = factor(Smoker, labels = c("Non-Smoker", "Smoker")),
+    Stroke = factor(Stroke, labels = c("No Stroke", "Stroke")),
+    HeartDiseaseorAttack = factor(HeartDiseaseorAttack, labels = c("No HD/Attack", "HD/Attack")),
+    PhysActivity = factor(PhysActivity, levels = c(0, 1), labels = c("No Activity", "Activity")),
+    Fruits = factor(Fruits, levels = c(0, 1), labels = c("No", "Yes")),
+    Veggies = factor(Veggies, levels = c(0, 1), labels = c("No", "Yes")),
+    HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0, 1), labels = c("No", "Yes")),
+    AnyHealthcare = factor(AnyHealthcare, levels = c(0, 1), labels = c("No", "Yes")),
+    NoDocbcCost = factor(NoDocbcCost, levels = c(0, 1), labels = c("No", "Yes")),
+    GenHlth = factor(GenHlth, labels = c("Excellent","Very good","Good","Fair","Poor")),
+    DiffWalk = factor(DiffWalk, levels = c(0, 1), labels = c("No Difficulty", "Difficulty Walking")),
+    Sex = factor(Sex, labels = c("Female", "Male")),
+    Age = factor(Age, levels = 1:13, labels = c("18–24", "25–29", "30–34", "35–39", "40–44", "45–49", "50–54", "55–59", "60–64", "65–69", "70–74", "75–79", "80+")),
+    Education = factor(Education, levels = 1:6, labels = c("Kindergarten or less", "Grades 1–8", "Grades 9–11", "High school or GED", "Some college/technical school", "College graduate")),
+    Income = factor(Income, levels = 1:8, labels = c("<$10,000", "$10,000–<$15,000", "$15,000–<$20,000", "$20,000–<$25,000", "$25,000–<$35,000", "$35,000–<$50,000", "$50,000–<$75,000", "$75,000+"))
+    )
+
+# Check diabetes distribution
+diabetes_df |>
+  count(Diabetes_012) |>
+  mutate(prop = n / sum(n))
+```
+Now, I'm going to split the data. 
+```{r}
+# Set seed for reproducability
+set.seed(123)
+
+# Split the data into 70%/30%
+diabetes_split <- initial_split(diabetes_df, prop = 0.7, strata = Diabetes_012)
+diabetes_train <- training(diabetes_split)
+diabetes_test  <- testing(diabetes_split)
+
+# 5-fold cross-validation on training data
+set.seed(123)
+diabetes_folds <- vfold_cv(diabetes_train, v = 5, strata = Diabetes_012)
+# Check distribution for training set
+diabetes_train |>
+count(Diabetes_012) |>
+mutate(prop = n / sum(n))
+# Check distribution for testing set
+diabetes_test |>
+count(Diabetes_012) |>
+mutate(prop = n / sum(n))
+```
+
+# Classification Tree
+
+```{r}
+# Tree model specification
+
+tree_spec <- decision_tree(
+mode = "classification",
+cost_complexity = tune()
+) |>
+set_engine("rpart")
+
+# Workflow: recipe + model
+
+tree_wf <- workflow() |>
+add_model(tree_spec) |>
+add_recipe(
+recipe(Diabetes_012 ~ BMI + Age + GenHlth + HighBP + HighChol +
+PhysActivity + DiffWalk + Sex + Education + Income,
+data = diabetes_train)
+)
+
+# Grid of cost_complexity values
+
+tree_grid <- grid_regular(cost_complexity(), levels = 10)
+
+# Metrics
+
+tree_metrics <- metric_set(mn_log_loss, accuracy)
+
+# Tune with CV
+
+set.seed(123)
+tree_res <- tune_grid(
+tree_wf,
+resamples = diabetes_folds,
+grid = tree_grid,
+metrics = tree_metrics
+)
+
+collect_metrics(tree_res)
+
+```
+
+```{r}
+# Select best model for classification tree
+
+best_tree <- select_best(tree_res, metric = "mn_log_loss")
+best_tree
+
+# Finalize workflow
+
+tree_final_wf <- finalize_workflow(tree_wf, best_tree)
+
+# Evaluate on test set
+
+tree_last_fit <- last_fit(tree_final_wf, diabetes_split)
+
+tree_test_metrics <- collect_metrics(tree_last_fit)
+tree_test_metrics
+
+```
+
+# Random Forest
+
+```{r}
+# Random forest specification
+
+rf_spec <- rand_forest(
+mode = "classification",
+mtry = tune(),
+trees = 100
+) |>
+set_engine("ranger")
+
+# Workflow
+
+rf_wf <- workflow() |>
+add_model(rf_spec) |>
+add_recipe(
+recipe(Diabetes_012 ~ BMI + Age + GenHlth + HighBP + HighChol +
+PhysActivity + DiffWalk + Sex + Education + Income,
+data = diabetes_train)
+)
+
+# Grid for mtry
+
+rf_grid <- tibble(mtry = c(2, 4, 6, 8))
+
+rf_metrics <- metric_set(mn_log_loss, accuracy)
+
+set.seed(123)
+rf_res <- tune_grid(
+rf_wf,
+resamples = diabetes_folds,
+grid = rf_grid,
+metrics = rf_metrics
+)
+
+collect_metrics(rf_res)
+
+```
+
+```{r}
+# Select best model for random forest
+
+best_rf <- select_best(rf_res, metric = "mn_log_loss")
+best_rf
+
+# Finalize workflow and evaluate on test set
+
+rf_final_wf <- finalize_workflow(rf_wf, best_rf)
+
+rf_last_fit <- last_fit(rf_final_wf, diabetes_split)
+
+rf_test_metrics <- collect_metrics(rf_last_fit)
+rf_test_metrics
+
+```
+

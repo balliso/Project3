@@ -19,7 +19,7 @@ First, I imported my dataset. Most of the variables in this dataset are stored a
 ```{r}
 library(tidyverse)
 
-# Import data
+# Read in data
 diabetes_df <- read_csv("diabetes_012_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
 
 # Convert categorical variables into factors
