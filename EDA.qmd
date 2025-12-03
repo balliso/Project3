@@ -56,6 +56,7 @@ colSums(is.na(diabetes_df))
 Below I explore the distribution of several variables in the dataset and how they relate to diabetes status. The goal here is to get a sense of the structure of the data, look for patterns, check for imbalance, and see which predictors seem most strongly associated with diabetes.
 
 ```{r}
+# Distribution of Diabetes Status
 diabetes_df |>
   count(Diabetes_012) |>
   ggplot(aes(x = Diabetes_012, y = n, fill = Diabetes_012)) +
@@ -68,6 +69,7 @@ diabetes_df |>
 The first thing I checked was the distribution of the response variable. Most people in the dataset do not have diabetes, with a small portion having prediabetes, and an even smaller group with diagnosed diabetes. This large imbalance is important because it could potentially affect model performance because models could learn to predict "no diabetes" every time.
 
 ```{r}
+# Numeric summaries
 diabetes_df |>
   select(BMI, PhysHlth, MentHlth) |>
   summary()
@@ -76,6 +78,7 @@ diabetes_df |>
 BMI has a much higher mean and right-skew than mental health or physical health, which fits the known patterns of this sample.
 
 ```{r}
+# Distribution of BMI
 ggplot(diabetes_df, aes(x = BMI)) +
   geom_histogram(bins = 40, fill = "#69b3a2") +
   labs(title = "Distribution of BMI", x = "BMI", y = "Count") +
@@ -85,6 +88,7 @@ ggplot(diabetes_df, aes(x = BMI)) +
 This graph shows that BMI is skewed to the right, towards the higher end of BMI with many people falling in the overweight or obese range. This makes sense because BMI is strongly linked to diabetes risk.
 
 ```{r}
+# Distribution of Physically Unhealthy Days
 ggplot(diabetes_df, aes(x = PhysHlth)) +
   geom_histogram(bins = 30, fill = "#7fb3d5") +
   labs(title = "Distribution of Physically Unhealthy Days", x = "Number of Physically Unhealthy Days", y = "Count")
@@ -93,6 +97,7 @@ ggplot(diabetes_df, aes(x = PhysHlth)) +
 Physically unhealthy days has a big spike at zero, meaning a lot of people reported no physical health issues in the past month. However, there's also a long tail of people who reported many unhealthy days. This variable may help separate people with chronic conditions (including diabetes) from those without.
 
 ```{r}
+# Diabetes Rate by Blood Pressure Status
 diabetes_df |>
   count(HighBP, Diabetes_012) |>
   group_by(HighBP) |>
@@ -107,6 +112,7 @@ diabetes_df |>
 This plot compares blood pressure status across all three groups of diabetes status (people with diabetes vs prediabetes vs no diabetes). People with high blood pressure have a noticeably higher proportion of diabetes and prediabetes compared to people without high blood pressure. This lines up with expectations because high blood pressure and diabetes often occur together. This variable will probably be useful in the model.
 
 ```{r}
+# Diabetes Status Across Age Groups
 diabetes_df |>
   count(Age, Diabetes_012) |>
   ggplot(aes(x = Age, y = n, fill = Diabetes_012)) +
@@ -120,6 +126,7 @@ diabetes_df |>
 The proportion of diabetes goes up pretty consistently with age. Younger age groups barely show any diabetes cases, while the oldest groups have much higher rates. Because this pattern is so strong, age is likely to be one of the most important predictors.
 
 ```{r}
+# Diabetes by General Health Rating
 diabetes_df |>
   count(GenHlth, Diabetes_012) |>
   ggplot(aes(x = GenHlth, y = n, fill = Diabetes_012)) +
