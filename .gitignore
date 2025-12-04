@@ -4,3 +4,18 @@
 .Ruserdata
 
 /.quarto/
+# Ignore Docker build artifacts
+Project3API/diabetes-api/
+Project3API/diabetes-api.tar
+
+# Ignore R session files
+.RData
+.Rhistory
+.Rproj.user/
+
+# Ignore Quarto build outputs
+.quarto/
+_site/
+
+# macOS system files
+.DS_Store
