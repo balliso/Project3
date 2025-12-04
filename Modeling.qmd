@@ -205,8 +205,3 @@ collect_metrics(rf_last_fit_log)
 
 To decide which model performed better, I compared the test-set multinomial log-loss for the tuned classification tree and the tuned random forest. The random forest had a lower log-loss of 0.398 compared to the classification tree 0.435, which means it produced better probability predictions on new data. Since the random forest performed better on this metric, I selected it as my final model.
 
-```{r}
-# Save workflow to project folder
-saveRDS(rf_final_wf, file = "final_model.rds")
-```
-
