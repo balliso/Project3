@@ -68,7 +68,7 @@ Mode <- function(x) {
 }
 
 #* @apiTitle Diabetes Prediction API
-#* @apiDescription This API...
+#* @apiDescription This API predicts diabetes status (No Diabetes, Prediabetes, Diabetes) using a tuned random forest model fit to BRFSS 2015 health indicators.
 
 #* Predict diabetes status using the final random forest model
 #*
@@ -146,5 +146,6 @@ function() {
   cm <- yardstick::conf_mat(results, truth = truth, estimate = .pred_class)
   
   # Plot confusion matrix
-  autoplot(cm)
+  p <- autoplot(cm)
+  print(p)
 }
