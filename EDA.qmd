@@ -107,7 +107,7 @@ diabetes_menthlth |>
     theme_minimal()
 ```
 
-Here I analyze the relationships between physical and mental health with diabetes. Respondents with 30 days of poor physical health were more likely to have diagnosed diabetes than those with 0 days of poor physical health. The same relationship was noted for mental health, though the difference was less pronounced. 
+Here I analyze the relationships between physical and mental health with diabetes. Respondents with 30 days of poor physical health were more likely to have diagnosed diabetes than those with 0 days of poor physical health. The same relationship was noted for mental health, though the difference was less pronounced.
 
 ```{r}
 # Distribution of BMI by Diabetes Status
