@@ -2,6 +2,7 @@
 title: "Modeling"
 format: html
 editor: visual
+output-file: Modeling.html
 ---
 
 # Introduction
