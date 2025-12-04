@@ -1,7 +1,8 @@
 ---
-title: "EDA: Diabetes Health Indicators"
+title: "EDA"
 format: html
 editor: visual
+output-file: index.html
 ---
 
 # Introduction
