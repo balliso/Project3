@@ -1,24 +1,24 @@
 ---
-title: "Modeling.qmd"
+title: "Modeling"
 format: html
 editor: visual
 ---
 
 # Introduction
 
-For the modeling portion of this project, I build and compare two different models to predict diabetes status using the diabetes health indicators dataset from the CDC’s 2015 Behavioral Risk Factor Surveillance System (BRFSS). The outcome variable is Diabetes_012, which has three possible categories: no diabetes, prediabetes, and diabetes. I use the same variables I explored in my EDA including BMI, age, general health, blood pressure, cholesterol, physical activity, and a few others. The goal of this modeling section is to use those variables explored in the EDA to predict diabetes status. I start by splitting the data into a training set (70%) and test set (30%), then fit two different model types (a classification tree and a random forest), tune them using 5-fold cross-validation with log-loss, and compare the two models on the test set. The model with the better performance is the one I will choose as my final model.
+For the modeling portion of this project, I build and compare two different models to predict diabetes status using the diabetes health indicators dataset from the CDC’s 2015 Behavioral Risk Factor Surveillance System (BRFSS). The outcome variable is Diabetes_binary, which has two possible categories: 0 = no diabetes and 1 = diabetes/prediabetes. I use the same variables I explored in my EDA including BMI, age, general health, blood pressure, cholesterol, physical activity, and a few others. The goal of this modeling section is to use those variables explored in the EDA to predict diabetes status. I start by splitting the data into a training set (70%) and test set (30%), then fit two different model types (a classification tree and a random forest), tune them using 5-fold cross-validation with log-loss, and compare the two models on the test set. The model with the better performance is the one I will choose as my final model.
 
 ```{r}
 library(tidyverse)
 library(tidymodels)
 
 # Read in data
-diabetes_df <- read_csv("diabetes_012_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
+diabetes_df <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
 
 # Convert categorical variables into factors
 diabetes_df <- diabetes_df |>
   mutate(
-    Diabetes_012 = factor(Diabetes_012, levels = c(0,1,2), labels = c("No Diabetes", "Prediabetes", "Diabetes")),
+    Diabetes_binary = factor(Diabetes_binary, levels = c(0,1), labels = c("No Diabetes", "Diabetes/Prediabetes")),
     HighBP = factor(HighBP, labels = c("No High BP", "High BP")),
     HighChol = factor(HighChol, labels = c("No High Chol", "High Chol")),
     CholCheck = factor(CholCheck, labels = c("No Check", "Checked")),
@@ -41,7 +41,7 @@ diabetes_df <- diabetes_df |>
 
 # Check diabetes distribution
 diabetes_df |>
-  count(Diabetes_012) |>
+  count(Diabetes_binary) |>
   mutate(prop = n / sum(n))
 ```
 
@@ -54,26 +54,26 @@ Now, I'm going to split the data into a training set and a testing set.
 set.seed(123)
 
 # Split the data into 70%/30%
-diabetes_split <- initial_split(diabetes_df, prop = 0.7, strata = Diabetes_012)
+diabetes_split <- initial_split(diabetes_df, prop = 0.7, strata = Diabetes_binary)
 diabetes_train <- training(diabetes_split)
 diabetes_test  <- testing(diabetes_split)
 
 # 5-fold cross-validation on training data
 set.seed(123)
-diabetes_folds <- vfold_cv(diabetes_train, v = 5, strata = Diabetes_012)
+diabetes_folds <- vfold_cv(diabetes_train, v = 5, strata = Diabetes_binary)
 # Check distribution for training set
 diabetes_train |>
-count(Diabetes_012) |>
+count(Diabetes_binary) |>
 mutate(prop = n / sum(n))
 # Check distribution for testing set
 diabetes_test |>
-count(Diabetes_012) |>
+count(Diabetes_binary) |>
 mutate(prop = n / sum(n))
 ```
 
 # Classification Tree
 
-A classification tree works by repeatedly splitting the data into smaller groups based on the predictor variables. Each split is chosen to separate the diabetes categories as well as possible. Trees are very interpretable, but a single tree can overfit if it’s allowed to grow too big. To prevent that, I tuned the cost_complexity parameter, which controls how much the model penalizes overly complicated trees. I used 5-fold cross-validation with multinomial log-loss to try several complexity values and pick the one that gave the best predictive performance. After selecting the best value, I fit the final tree model on the training data and evaluated it on the test set.
+A classification tree works by repeatedly splitting the data into smaller groups based on the predictor variables. Each split is chosen to separate the diabetes categories as well as possible. Trees are very interpretable, but a single tree can overfit if it’s allowed to grow too big. To prevent that, I tune the cost_complexity parameter, which controls how much the model penalizes overly complicated trees. I use 5-fold cross-validation with log-loss as the tuning metric and choose the value of cost complexity that minimizes log-loss. After selecting the best value, I fit the final tree model on the training data and evaluate it on the test set.
 
 ```{r}
 # Tree model specification
@@ -87,7 +87,7 @@ set_engine("rpart")
 tree_wf <- workflow() |>
 add_model(tree_spec) |>
 add_recipe(
-recipe(Diabetes_012 ~ BMI + Age + GenHlth + HighBP + HighChol +
+recipe(Diabetes_binary ~ BMI + Age + GenHlth + HighBP + HighChol +
 PhysActivity + DiffWalk + Sex + Education + Income,
 data = diabetes_train)
 )
@@ -125,12 +125,12 @@ tree_test_metrics <- collect_metrics(tree_last_fit)
 tree_test_metrics
 ```
 
-Based on 5-fold cross-validation, the cost complexity value that minimized log-loss was 0.001. This means the model performed best with a moderate amount of pruning, so I selected this value for the final tree and evaluated it on the test set. The finalized tree reached an accuracy of about 0.85, a multiclass ROC AUC of about 0.63, and a Brier score of about 0.12 on the test data. These metrics show that the tree does reasonably well at predicting diabetes status but there is still plenty of room for improvement, especially in how well it separates the three classes. They also give me a baseline to compare against the random forest model which will help me decide which model performs better overall.
+Based on 5-fold cross-validation, the cost complexity value that minimized log-loss was 0.0001. This means the model performed best with a moderate amount of pruning, so I selected this value for the final tree and evaluated it on the test set. The finalized tree reached an accuracy of about 0.862, a ROC AUC of about 0.745, and a Brier score of about 0.104 on the test data. These metrics show that the tree does reasonably well at predicting diabetes status but there is still plenty of room for improvement. They also give me a baseline to compare against the random forest model which will help me decide which model performs better overall.
 
 
 # Random Forest
 
-A random forest is a collection of decision trees that all make their own predictions, and then the forest averages them together. Random forests usually perform better than a single tree because each tree sees a slightly different bootstrap sample of the data and only looks at a random subset of predictors at each split. The main parameter I tuned here was mtry, which controls how many predictors each tree is allowed to look at when it chooses a split. I used 5-fold cross-validation and log-loss to find the best value of mtry. After finding the best value of mtry, I fit the final random forest model on the training data and evaluated it on the test set.
+A random forest is a collection of decision trees that all make their own predictions, and then the forest averages them together. Random forests usually perform better than a single tree because each tree sees a slightly different bootstrap sample of the data and only looks at a random subset of predictors at each split. This reduces variance and often improves predictive performance. The main parameter I tune here is mtry, which controls how many predictors each tree is allowed to look at when it chooses a split. I use 5-fold cross-validation and log-loss to find the best value of mtry. After finding the best value of mtry, I fit the final random forest model on the training data and evaluate it on the test set.
 
 ```{r}
 # Random forest specification
@@ -145,7 +145,7 @@ set_engine("ranger")
 rf_wf <- workflow() |>
 add_model(rf_spec) |>
 add_recipe(
-recipe(Diabetes_012 ~ BMI + Age + GenHlth + HighBP + HighChol +
+recipe(Diabetes_binary ~ BMI + Age + GenHlth + HighBP + HighChol +
 PhysActivity + DiffWalk + Sex + Education + Income,
 data = diabetes_train)
 )
@@ -180,7 +180,7 @@ rf_test_metrics <- collect_metrics(rf_last_fit)
 rf_test_metrics
 ```
 
-Using 5-fold cross-validation, the value of mtry that minimized log-loss was 2. This means the model performed best when each tree only considered a small subset of predictors at each split, which helps reduce overfitting and increases the variety among the trees. After selecting this tuning value, I fit the final random forest on the training data and evaluated it on the test set. The model achieved an accuracy of about 0.85, a multiclass ROC AUC of about 0.70, and a Brier score of about 0.11. These results show that the random forest provides reasonably strong predictions for the three diabetes categories, both in terms of classification performance and probability accuracy.
+Using 5-fold cross-validation, the value of mtry that minimized log-loss was 2. This means the model performed best when each tree only considered a small subset of predictors at each split, which helps reduce overfitting and increases the variety among the trees. After selecting this tuning value, I fit the final random forest on the training data and evaluated it on the test set. The model achieved an accuracy of about 0.865, a ROC AUC of about 0.820, and a Brier score of about 0.100. These results show that the random forest provides reasonably strong predictions for the diabetes categories, both in terms of classification performance and probability accuracy.
 
 # Final Model Selection
 
@@ -203,5 +203,5 @@ collect_metrics(tree_last_fit_log)
 collect_metrics(rf_last_fit_log)
 ```
 
-To decide which model performed better, I compared the test-set multinomial log-loss for the tuned classification tree and the tuned random forest. The random forest had a lower log-loss of 0.398 compared to the classification tree 0.435, which means it produced better probability predictions on new data. Since the random forest performed better on this metric, I selected it as my final model.
+To decide which model performed better, I compared the test-set log-loss for the tuned classification tree and the tuned random forest. The random forest had a lower log-loss of 0.320 compared to the classification tree 0.352, which means it produced better probability predictions on new data. Since the random forest performed better on this metric, I selected it as my final model.
 

@@ -3,12 +3,12 @@ library(tidyverse)
 library(tidymodels)
 
 # Read in data
-diabetes_df <- read_csv("../diabetes_012_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
+diabetes_df <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
 
 # Convert categorical variables into factors
 diabetes_df <- diabetes_df |>
   mutate(
-    Diabetes_012 = factor(Diabetes_012, levels = c(0,1,2), labels = c("No Diabetes", "Prediabetes", "Diabetes")),
+    Diabetes_binary = factor(Diabetes_binary, levels = c(0,1), labels = c("No Diabetes", "Diabetes/Prediabetes")),
     HighBP = factor(HighBP, labels = c("No High BP", "High BP")),
     HighChol = factor(HighChol, labels = c("No High Chol", "High Chol")),
     CholCheck = factor(CholCheck, labels = c("No Check", "Checked")),
@@ -38,7 +38,7 @@ rf_spec <- rand_forest(
   set_engine("ranger")
 
 rf_recipe <- recipe(
-  Diabetes_012 ~ BMI + Age + GenHlth + HighBP + HighChol +
+  Diabetes_binary ~ BMI + Age + GenHlth + HighBP + HighChol +
     PhysActivity + DiffWalk + Sex + Education + Income,
   data = diabetes_df
 )
@@ -68,7 +68,7 @@ Mode <- function(x) {
 }
 
 #* @apiTitle Diabetes Prediction API
-#* @apiDescription This API predicts diabetes status (No Diabetes, Prediabetes, Diabetes) using a tuned random forest model fit to BRFSS 2015 health indicators.
+#* @apiDescription This API predicts diabetes status (No Diabetes vs Diabetes/Prediabetes) using a tuned random forest model fit to BRFSS 2015 health indicators.
 
 #* Predict diabetes status using the final random forest model
 #*
@@ -116,7 +116,7 @@ function(
   )
 }
 # Example calls:
-# http://localhost:PORT/pred?BMI=50&Age=50–54&GenHlth=Poor&HighBP=Yes%20High%20BP&HighChol=Yes%20High%20Chol&PhysActivity=NoActivity&DiffWalk=No%20Difficulty&Sex=Female&Education=Some%20college/technical%20school&Income=$50,000–<$75,000
+# http://localhost:PORT/pred?BMI=50&Age=50–54&GenHlth=Poor&HighBP=High%20BP&HighChol=High%20Chol&PhysActivity=No%20Activity&DiffWalk=No%20Difficulty&Sex=Female&Education=Some%20college/technical%20school&Income=%2450,000%E2%80%93%3C%2475,000
 # http://localhost:PORT/pred?BMI=32&Age=55–59&GenHlth=Fair&HighBP=High%20BP&HighChol=High%20Chol&PhysActivity=No%20Activity&DiffWalk=Difficulty%20Walking&Sex=Female&Education=College%20graduate&Income=$35,000–<$50,000
 # http://localhost:PORT/pred?BMI=22&Age=25–29&GenHlth=Excellent&HighBP=No%20High%20BP&HighChol=No%20High%20Chol&PhysActivity=Activity&DiffWalk=No%20Difficulty&Sex=Male&Education=Some%20college/technical%20school&Income=$50,000–<$75,000
 
@@ -138,7 +138,7 @@ function() {
   
   # Build a data frame with truth and predictions
   results <- tibble(
-    truth = diabetes_df$Diabetes_012,
+    truth = diabetes_df$Diabetes_binary,
     .pred_class = preds$.pred_class
   )
   

@@ -8,7 +8,7 @@ editor: visual
 
 The data used in this project comes from the CDC's 2015 Behavioral Risk Factor Surveillance System. The survey was conducted to collect uniform data on preventative health practices and risk behaviors that are linked to chronic diseases in adults. The diabetes health indicators dataset is a consolidated version of the entire 2015 survey, containing over 250,000 responses and variables related to diabetes, health status, and lifestyle.
 
-The primary variable of interest for this project is Diabetes_012, which classifies respondents into three groups: 0 = no diabetes, 1 = prediabetes, 2 = diagnosed diabetes. Because this survey includes many health indicators that may relate to diabetes risk, this dataset is well-suited for exploring how variables can help predict diabetes status.
+The primary variable of interest for this project is Diabetes_binary, which classifies respondents into two groups: 0 = no diabetes, 1 = prediabetes or diabetes. Because this survey includes many health indicators that may relate to diabetes risk, this dataset is well-suited for exploring how variables can help predict diabetes status.
 
 In this exploratory data analysis, I focus on variables that are known to be related to diabetes, such as BMI, age, general health rating, high blood pressure, high cholesterol, and physical activity. The goal of the EDA is to understand the structure of the data, check for missingness, summarize the distribution of the variables, and visualize how they relate to diabetes status. These insights will help guide my modeling decisions in the next part of this project.
 
@@ -20,12 +20,12 @@ First, I import my dataset. Most of the variables in this dataset are stored as 
 library(tidyverse)
 
 # Read in data
-diabetes_df <- read_csv("diabetes_012_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
+diabetes_df <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv", show_col_types = FALSE)
 
 # Convert categorical variables into factors
 diabetes_df <- diabetes_df |>
   mutate(
-    Diabetes_012 = factor(Diabetes_012, levels = c(0,1,2), labels = c("No Diabetes", "Prediabetes", "Diabetes")),
+    Diabetes_binary = factor(Diabetes_binary, levels = c(0,1), labels = c("No Diabetes", "Diabetes/Prediabetes")),
     HighBP = factor(HighBP, labels = c("No High BP", "High BP")),
     HighChol = factor(HighChol, labels = c("No High Chol", "High Chol")),
     CholCheck = factor(CholCheck, labels = c("No Check", "Checked")),
@@ -58,15 +58,15 @@ Below I explore the distribution of several variables in the dataset and how the
 ```{r}
 # Distribution of Diabetes Status
 diabetes_df |>
-  count(Diabetes_012) |>
-  ggplot(aes(x = Diabetes_012, y = n, fill = Diabetes_012)) +
+  count(Diabetes_binary) |>
+  ggplot(aes(x = Diabetes_binary, y = n, fill = Diabetes_binary)) +
   geom_col() +
   labs(title = "Distribution of Diabetes Status", x = "Diabetes Category", y = "Count") +
   scale_fill_discrete(name = "Diabetes Status") +
   theme_minimal()
 ```
 
-The first thing I check is the distribution of the response variable. Most people in the dataset do not have diabetes, with a small portion having diagnosed diabetes, and an even smaller group with prediabetes. This large imbalance is important because it could potentially affect model performance because models could learn to predict "no diabetes" every time.
+The first thing I check is the distribution of the response variable. Most people in the dataset do not have diabetes, with a small portion having diagnosed diabetes or prediabetes. This large imbalance is important because it could potentially affect model performance because models could learn to predict "no diabetes" every time.
 
 ```{r}
 # Distribution of Physically Unhealthy Days
@@ -82,10 +82,10 @@ Physically unhealthy days has a big spike at zero, meaning a lot of people repor
 diabetes_physhlth <- subset(diabetes_df, PhysHlth %in% c(0, 30))
 
 diabetes_physhlth |>
-  count(PhysHlth, Diabetes_012) |>
+  count(PhysHlth, Diabetes_binary) |>
   group_by(PhysHlth) |>
   mutate(prop = n / sum(n)) |>
-  ggplot(aes(x = PhysHlth, y = prop, fill = Diabetes_012)) +
+  ggplot(aes(x = PhysHlth, y = prop, fill = Diabetes_binary)) +
     geom_col(position = "fill") +
     labs(title = "Diabetes Status by Physical Health", x = "Number of Days Physical Health was Not Good", y = "Proportion") +
     scale_x_continuous(breaks = c(0, 30)) +
@@ -96,10 +96,10 @@ diabetes_physhlth |>
 diabetes_menthlth <- subset(diabetes_df, MentHlth %in% c(0, 30))
 
 diabetes_menthlth |>
-  count(MentHlth, Diabetes_012) |>
+  count(MentHlth, Diabetes_binary) |>
   group_by(MentHlth) |>
   mutate(prop = n / sum(n)) |>
-  ggplot(aes(x = MentHlth, y = prop, fill = Diabetes_012)) +
+  ggplot(aes(x = MentHlth, y = prop, fill = Diabetes_binary)) +
     geom_col(position = "fill") +
     labs(title = "Diabetes Status by Mental Health", x = "Number of Days Mental Health was Not Good", y = "Proportion") +
     scale_x_continuous(breaks = c(0, 30)) +
@@ -111,7 +111,7 @@ Here I analyze the relationships between physical and mental health with diabete
 
 ```{r}
 # Distribution of BMI by Diabetes Status
-ggplot(diabetes_df, aes(x = BMI, fill = Diabetes_012)) +
+ggplot(diabetes_df, aes(x = BMI, fill = Diabetes_binary)) +
   geom_density(alpha = 0.4) +
   labs(title = "Distribution of Diabetes Status by BMI",
        x = "BMI", y = "Density") +
@@ -124,23 +124,23 @@ This graph shows that BMI is skewed to the right for all diabetes statuses, but 
 ```{r}
 # Diabetes Rate by Blood Pressure Status
 diabetes_df |>
-  count(Diabetes_012, HighBP) |>
-  group_by(Diabetes_012) |>
+  count(Diabetes_binary, HighBP) |>
+  group_by(Diabetes_binary) |>
   mutate(prop = n / sum(n)) |>
-  ggplot(aes(x = Diabetes_012, y = prop, fill = HighBP)) +
+  ggplot(aes(x = Diabetes_binary, y = prop, fill = HighBP)) +
     geom_col(position = "fill") +
     labs(title = "Blood Pressure Status by Diabetes Status", x = "Diabetes Status", y = "Proportion") +
     scale_fill_discrete(name = "Blood Pressure Status") +
     theme_minimal()
 ```
 
-This plot compares blood pressure status across all three groups of diabetes status (people with diabetes vs prediabetes vs no diabetes). People with high blood pressure have a noticeably higher proportion of diabetes and prediabetes compared to people without high blood pressure. This lines up with expectations because high blood pressure and diabetes often occur together. This variable will probably be useful in the model.
+This plot compares blood pressure status across people with diabetes/prediabetes vs no diabetes. People with high blood pressure have a noticeably higher proportion of diabetes and prediabetes compared to people without high blood pressure. This lines up with expectations because high blood pressure and diabetes often occur together. This variable will probably be useful in the model.
 
 ```{r}
 # Diabetes Status Across Age Groups
 diabetes_df |>
-  count(Age, Diabetes_012) |>
-  ggplot(aes(x = Age, y = n, fill = Diabetes_012)) +
+  count(Age, Diabetes_binary) |>
+  ggplot(aes(x = Age, y = n, fill = Diabetes_binary)) +
   geom_col(position = "fill") +
   labs(title = "Diabetes Status Across Age Groups", x = "Age Ranges", y = "Proportion") +
   scale_fill_discrete(name = "Diabetes Status") +
@@ -153,8 +153,8 @@ The proportion of diabetes goes up pretty consistently with age. Younger age gro
 ```{r}
 # Diabetes by General Health Rating
 diabetes_df |>
-  count(GenHlth, Diabetes_012) |>
-  ggplot(aes(x = GenHlth, y = n, fill = Diabetes_012)) +
+  count(GenHlth, Diabetes_binary) |>
+  ggplot(aes(x = GenHlth, y = n, fill = Diabetes_binary)) +
   geom_col(position = "fill") +
   labs(title = "Diabetes Status by General Health Status", x = "General Health Status", y = "Proportion") +
   scale_fill_discrete(name = "Diabetes Status") +
