@@ -125,13 +125,13 @@ function(
 function() {
   list(
     name = "Bailey Allison",
-    github_pages = "https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/"
+    github_pages = "https://balliso.github.io/Project3/"
   )
 }
 
 #* Confusion matrix plot endpoint
 #* @get /confusion
-#* @png
+#* @serializer png
 function() {
   # Get predicted classes for the whole dataset
   preds <- predict(final_model, diabetes_df, type = "class")
